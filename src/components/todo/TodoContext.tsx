@@ -1,3 +1,4 @@
+"use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Task, Subtask } from '@/types/task';
 import { getFromLocalStorage, saveToLocalStorage } from '@/lib/localStorage';

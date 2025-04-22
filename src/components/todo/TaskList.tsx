@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from 'react';
 import { useTodos } from './TodoContext';
 import { Task } from '@/types/task';
