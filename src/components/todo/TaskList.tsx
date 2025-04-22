@@ -5,6 +5,7 @@ import { Task } from '@/types/task';
 import { Button } from '../ui/Button';
 import TaskDueDateIndicator from './TaskDueDateIndicator';
 import TaskStatusToggle from './TaskStatusToggle';
+import TaskShare, { ShareButton } from './TaskShare';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext,
@@ -151,10 +152,45 @@ function SortableTaskItem({ task, selected, onSelect, onEdit, onDelete, onToggle
           <div className="mt-2 text-xs text-gray-600 dark:text-gray-300 italic whitespace-pre-line">{task.notes}</div>
         )}
       </div>
-      <Button variant="ghost" onClick={onEdit} aria-label="Edit">✏️</Button>
-      <Button variant="ghost" onClick={onDelete} aria-label="Delete">🗑️</Button>
-      <Button variant="secondary" onClick={onTimerClick} aria-label="Task Timer">⏱️</Button>
-      <Button variant="secondary" onClick={() => onShare(task)} aria-label="Share Task">🔗</Button>
+      <div className="flex items-center gap-2">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 rounded"
+          onClick={onEdit}
+          aria-label="Edit task"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </motion.button>
+        
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="p-2 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 rounded"
+          onClick={onDelete}
+          aria-label="Delete task"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </motion.button>
+        
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="p-2 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 rounded"
+          onClick={onTimerClick}
+          aria-label="Task timer"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </motion.button>
+        
+        <ShareButton onClick={() => onShare(task)} />
+      </div>
       <span
         className="cursor-move text-gray-400 ml-2"
         title="Drag to reorder"
@@ -182,6 +218,7 @@ function useToast() {
 
 export default function TaskList() {
   const [timerTaskId, setTimerTaskId] = React.useState<string | null>(null);
+  const [shareTaskId, setShareTaskId] = React.useState<string | null>(null);
   const { filteredTasks, tasks, setTasks, selectedIds, setSelectedIds } = useTodos();
   const [editingId, setEditingId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor));
@@ -199,18 +236,8 @@ export default function TaskList() {
     ? filteredTasks.filter(t => (t.category || '') === categoryFilter)
     : filteredTasks;
 
-  function handleShare(task: import('@/types/task').Task) {
-    let text = `Task: ${task.title}`;
-    if (task.dueDate) text += `\nDue: ${task.dueDate}`;
-    if (task.subtasks && task.subtasks.length > 0) {
-      text += '\nSubtasks:';
-      for (const st of task.subtasks) {
-        text += `\n- [${st.completed ? 'x' : ' '}] ${st.title}`;
-      }
-    }
-    if (task.notes) text += `\nNotes: ${task.notes}`;
-    navigator.clipboard.writeText(text);
-    showToast('Task copied to clipboard!');
+  function handleShareClick(task: Task) {
+    setShareTaskId(task.id);
   }
 
   function handleDelete(id: string) {
@@ -278,13 +305,19 @@ export default function TaskList() {
                 onDelete={() => handleDelete(task.id)}
                 onToggleComplete={() => handleToggleComplete(task.id)}
                 onTimerClick={() => setTimerTaskId(task.id)}
-                onShare={handleShare}
+                onShare={() => handleShareClick(task)}
               />
             ))}
           </AnimatePresence>
         </div>
       </SortableContext>
       <TimerModal open={!!timerTaskId} onClose={() => setTimerTaskId(null)} taskId={timerTaskId ?? ''} />
+      {shareTaskId && (
+        <TaskShare 
+          task={tasks.find(t => t.id === shareTaskId)!}
+          onClose={() => setShareTaskId(null)} 
+        />
+      )}
       <Toast />
     </DndContext>
   );
